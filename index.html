@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電卓アプリ</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1f2937">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="電卓">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .calculator {
+            background: #1f2937;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            max-width: 350px;
+            width: 100%;
+        }
+        
+        .display {
+            background: #000;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: right;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        
+        .display-text {
+            color: white;
+            font-size: 2.5rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 300;
+            overflow: hidden;
+            word-break: break-all;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        .btn {
+            border: none;
+            border-radius: 12px;
+            height: 65px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: white;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-number {
+            background: #374151;
+        }
+        
+        .btn-number:hover {
+            background: #4b5563;
+        }
+        
+        .btn-operator {
+            background: #f59e0b;
+        }
+        
+        .btn-operator:hover {
+            background: #d97706;
+        }
+        
+        .btn-function {
+            background: #6b7280;
+        }
+        
+        .btn-function:hover {
+            background: #4b5563;
+        }
+        
+        .btn-zero {
+            grid-column: span 2;
+        }
+        
+        .btn-clear {
+            grid-column: span 2;
+        }
+        
+        @media (max-width: 480px) {
+            .calculator {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .display-text {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                height: 60px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display">
+            <div class="display-text" id="display">0</div>
+        </div>
+        
+        <div class="buttons">
+            <button class="btn btn-function btn-clear" onclick="clearAll()">AC</button>
+            <button class="btn btn-function" onclick="backspace()">⌫</button>
+            <button class="btn btn-operator" onclick="inputOperation('÷')">÷</button>
+            
+            <button class="btn btn-number" onclick="inputNumber('7')">7</button>
+            <button class="btn btn-number" onclick="inputNumber('8')">8</button>
+            <button class="btn btn-number" onclick="inputNumber('9')">9</button>
+            <button class="btn btn-operator" onclick="inputOperation('×')">×</button>
+            
+            <button class="btn btn-number" onclick="inputNumber('4')">4</button>
+            <button class="btn btn-number" onclick="inputNumber('5')">5</button>
+            <button class="btn btn-number" onclick="inputNumber('6')">6</button>
+            <button class="btn btn-operator" onclick="inputOperation('-')">-</button>
+            
+            <button class="btn btn-number" onclick="inputNumber('1')">1</button>
+            <button class="btn btn-number" onclick="inputNumber('2')">2</button>
+            <button class="btn btn-number" onclick="inputNumber('3')">3</button>
+            <button class="btn btn-operator" onclick="inputOperation('+')">+</button>
+            
+            <button class="btn btn-number btn-zero" onclick="inputNumber('0')">0</button>
+            <button class="btn btn-number" onclick="inputDecimal()">.</button>
+            <button class="btn btn-operator" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let display = '0';
+        let prevValue = null;
+        let operation = null;
+        let waitingForValue = false;
+        
+        const displayElement = document.getElementById('display');
+        
+        function updateDisplay() {
+            displayElement.textContent = display;
+        }
+        
+        function inputNumber(num) {
+            if (waitingForValue) {
+                display = num;
+                waitingForValue = false;
+            } else {
+                display = display === '0' ? num : display + num;
+            }
+            updateDisplay();
+        }
+        
+        function inputOperation(nextOperation) {
+            const inputValue = parseFloat(display);
+            
+            if (prevValue === null) {
+                prevValue = inputValue;
+            } else if (operation) {
+                const currentValue = prevValue || 0;
+                const newValue = performCalculation(currentValue, inputValue, operation);
+                
+                display = String(newValue);
+                prevValue = newValue;
+            }
+            
+            waitingForValue = true;
+            operation = nextOperation;
+            updateDisplay();
+        }
+        
+        function performCalculation(firstValue, secondValue, operation) {
+            switch (operation) {
+                case '+':
+                    return firstValue + secondValue;
+                case '-':
+                    return firstValue - secondValue;
+                case '×':
+                    return firstValue * secondValue;
+                case '÷':
+                    return secondValue !== 0 ? firstValue / secondValue : 0;
+                default:
+                    return secondValue;
+            }
+        }
+        
+        function calculate() {
+            const inputValue = parseFloat(display);
+            
+            if (prevValue !== null && operation) {
+                const newValue = performCalculation(prevValue, inputValue, operation);
+                display = String(newValue);
+                prevValue = null;
+                operation = null;
+                waitingForValue = true;
+                updateDisplay();
+            }
+        }
+        
+        function clearAll() {
+            display = '0';
+            prevValue = null;
+            operation = null;
+            waitingForValue = false;
+            updateDisplay();
+        }
+        
+        function backspace() {
+            display = display.length > 1 ? display.slice(0, -1) : '0';
+            updateDisplay();
+        }
+        
+        function inputDecimal() {
+            if (waitingForValue) {
+                display = '0.';
+                waitingForValue = false;
+            } else if (display.indexOf('.') === -1) {
+                display = display + '.';
+            }
+            updateDisplay();
+        }
+        
+        // Service Worker登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed');
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
